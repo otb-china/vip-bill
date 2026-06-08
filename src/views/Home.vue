@@ -114,10 +114,6 @@
 
           <van-swipe-cell v-for="item in activeBill.items" :key="item.id" class="item-swipe">
             <div class="item-row">
-              <label class="item-field item-name-field">
-                <span>名称</span>
-                <input v-model.trim="item.name" class="text-input" @input="touchActiveBill" />
-              </label>
               <label class="item-field item-price-field">
                 <span>金额</span>
                 <input
@@ -129,6 +125,10 @@
                   step="0.01"
                   @input="touchActiveBill"
                 />
+              </label>
+              <label class="item-field item-name-field">
+                <span>备注</span>
+                <input v-model.trim="item.name" class="text-input" @input="touchActiveBill" />
               </label>
             </div>
             <template #right>
@@ -350,7 +350,7 @@ function touchActiveBill() {
 function addItem() {
   if (!activeBill.value) return;
   if (!canAppendItem()) {
-    showToast("请先填写当前子项的名称和价格");
+    showToast("请先填写当前子项的金额");
     return;
   }
   activeBill.value.items.unshift(createEmptyBillItem());
@@ -363,7 +363,7 @@ function canAppendItem() {
 }
 
 function isValidItem(item: Bill["items"][number]) {
-  return Boolean(item.name.trim()) && item.price !== "" && Number.isFinite(Number(item.price));
+  return item.price !== "" && Number.isFinite(Number(item.price));
 }
 
 function getValidItems(items: Bill["items"]) {
@@ -513,7 +513,7 @@ function createBillImage(bill: Bill) {
     ctx.fill();
     ctx.fillStyle = "#203747";
     ctx.font = "24px Arial, sans-serif";
-    ctx.fillText(item.name || "未命名子项", 112, y - 8);
+    ctx.fillText(item.name || "无备注", 112, y - 8);
     ctx.fillStyle = "#1f6b7b";
     ctx.font = "700 24px Arial, sans-serif";
     ctx.textAlign = "right";
@@ -907,7 +907,7 @@ onUnmounted(() => {
 
 .item-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(104px, 142px);
+  grid-template-columns: minmax(104px, 142px) minmax(0, 1fr);
   gap: 12px;
   align-items: end;
   padding: 14px;
@@ -1056,7 +1056,7 @@ onUnmounted(() => {
   }
 
   .item-row {
-    grid-template-columns: minmax(0, 1fr) minmax(82px, 96px);
+    grid-template-columns: minmax(82px, 96px) minmax(0, 1fr);
     gap: 8px;
     padding: 12px;
   }
