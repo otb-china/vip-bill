@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { showConfirmDialog, showToast } from "vant";
 import { LStorage } from "@/utils/localStorage.ts";
 import { normalizeBills, normalizeDeletedBills } from "@/utils/billData.ts";
-import type { Bill, DeletedBill, LocalBillBackupData } from "@/types/bill";
+import type { Bill, DeletedBill, VipBillBackupData } from "@/types/bill";
 
 interface UseBackupActionsOptions {
   bills: Ref<Bill[]>;
@@ -50,7 +50,7 @@ export function useBackupActions(options: UseBackupActionsOptions) {
     const url = URL.createObjectURL(blob);
     const downloadLink = document.createElement("a");
     downloadLink.href = url;
-    downloadLink.download = `local-bill-backup-${dayjs(new Date()).format(options.dateFormat)}.json`;
+    downloadLink.download = `vip-bill-backup-${dayjs(new Date()).format(options.dateFormat)}.json`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
@@ -73,8 +73,8 @@ export function useBackupActions(options: UseBackupActionsOptions) {
     }).then(() => {
       options.bills.value = [];
       options.deletedBills.value = [];
-      LStorage.new("localBillData").remove();
-      LStorage.new("localBillRecycleBin").remove();
+      LStorage.new("vipBillData").remove();
+      LStorage.new("vipBillRecycleBin").remove();
       options.settingsPopup.value = false;
       showToast("数据已重置");
     }).catch(() => {
@@ -83,7 +83,7 @@ export function useBackupActions(options: UseBackupActionsOptions) {
 
   function importData() {
     try {
-      const parsedData = JSON.parse(importInfo.value.dataStr) as LocalBillBackupData;
+      const parsedData = JSON.parse(importInfo.value.dataStr) as VipBillBackupData;
       if (!parsedData || typeof parsedData !== "object" || Array.isArray(parsedData)) {
         throw new Error("Invalid backup data");
       }
@@ -92,11 +92,11 @@ export function useBackupActions(options: UseBackupActionsOptions) {
       if (!Array.isArray(parsedData.bills) || bills.length !== parsedData.bills.length) {
         throw new Error("Invalid bills");
       }
-      LStorage.new("localBillData").setter(bills);
+      LStorage.new("vipBillData").setter(bills);
       if (deletedBills.length) {
-        LStorage.new("localBillRecycleBin").setter(deletedBills);
+        LStorage.new("vipBillRecycleBin").setter(deletedBills);
       } else {
-        LStorage.new("localBillRecycleBin").remove();
+        LStorage.new("vipBillRecycleBin").remove();
       }
       options.initData();
       importExportInfo.value.show = false;

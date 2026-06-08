@@ -37,7 +37,7 @@
           </span>
           <span>
             <strong>导出总数据</strong>
-            <em>下载本地账单备份文件</em>
+            <em>下载会员账单备份文件</em>
           </span>
         </button>
 
@@ -67,7 +67,7 @@
           </span>
           <span>
             <strong>重置数据</strong>
-            <em>清除全部本地账单</em>
+            <em>清除全部会员账单</em>
           </span>
         </button>
       </div>

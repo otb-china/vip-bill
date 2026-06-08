@@ -2,8 +2,8 @@
   <div class="home-page" :style="themeStyle">
     <header ref="headerSection" class="page-header">
       <div>
-        <p class="hero-tag">Local Bill</p>
-        <h1>{{ activeBill ? "账单明细" : "本地账单" }}</h1>
+        <p class="hero-tag">Vip Bill</p>
+        <h1>{{ activeBill ? "账单明细" : "会员账单" }}</h1>
       </div>
       <div class="header-actions">
         <button v-if="activeBill" class="header-icon" type="button" @click="closeBill">
@@ -47,7 +47,7 @@
 
       <div v-if="!bills.length" class="empty-state">
         <strong>还没有账单</strong>
-        <span>点击加号创建第一张本地账单。</span>
+        <span>点击加号创建第一张会员账单。</span>
       </div>
     </main>
 
@@ -210,9 +210,9 @@ const bills = ref<Bill[]>([]);
 const deletedBills = ref<DeletedBill[]>([]);
 const activeBillId = ref("");
 
-const billStorage = LStorage.new("localBillData");
-const recycleStorage = LStorage.new("localBillRecycleBin");
-const themeStorage = LStorage.new("localBillTheme");
+const billStorage = LStorage.new("vipBillData");
+const recycleStorage = LStorage.new("vipBillRecycleBin");
+const themeStorage = LStorage.new("vipBillTheme");
 
 const currentThemeOption = computed(() => {
   return themeOptions.find((theme) => theme.key === currentTheme.value) || themeOptions[0];
@@ -407,7 +407,7 @@ async function shareBillImage() {
   const dataUrl = createBillImage(activeBill.value);
   const link = document.createElement("a");
   link.href = dataUrl;
-  link.download = `${activeBill.value.name || "local-bill"}-明细.png`;
+  link.download = `${activeBill.value.name || "vip-bill"}-明细.png`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -472,7 +472,7 @@ function createBillImage(bill: Bill) {
 
   ctx.fillStyle = "#72808c";
   ctx.font = "18px Arial, sans-serif";
-  ctx.fillText("Local Bill", 88, footerY);
+  ctx.fillText("Vip Bill", 88, footerY);
   return canvas.toDataURL("image/png");
 }
 
