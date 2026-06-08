@@ -21,7 +21,7 @@
     <main v-if="!activeBill" class="bill-list-view">
       <section class="summary-band">
         <div>
-          <p class="section-tag">Total</p>
+          <p class="section-tag">Total Spent</p>
           <strong>¥{{ formatMoney(grandTotal) }}</strong>
         </div>
         <span>{{ bills.length }} 个账单</span>
@@ -36,8 +36,8 @@
           @click="openBill(bill.id)"
         >
           <span>{{ bill.name }}</span>
-          <strong>¥{{ formatMoney(billTotal(bill)) }}</strong>
-          <small>{{ bill.items.length }} 项</small>
+          <strong>¥{{ formatMoney(billRemaining(bill)) }}</strong>
+          <small>消费 ¥{{ formatMoney(billTotal(bill)) }}</small>
         </button>
 
         <button class="add-bill-card" type="button" @click="addBill">
@@ -55,13 +55,35 @@
       <section class="bill-editor">
         <div class="detail-summary">
           <label class="field-label title-field">
-            <span>BILL NAME</span>
+            <span>VIP NAME</span>
             <input v-model.trim="activeBill.name" class="text-input title-input" placeholder="账单名" @input="touchActiveBill" />
           </label>
 
-          <div class="detail-total">
-            <span>累计{{ validActiveBillItems.length }}项</span>
-            <strong>¥{{ formatMoney(activeBillTotal) }}</strong>
+          <div class="budget-row">
+            <label class="field-label budget-field">
+              <span>总充值</span>
+              <input
+                v-model.number="activeBill.totalAmount"
+                class="text-input budget-input"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="总充值"
+                @input="touchActiveBill"
+              />
+            </label>
+
+            <div class="balance-card">
+              <div class="balance-main">
+                <span>剩余额</span>
+                <strong>¥{{ formatMoney(activeBillRemaining) }}</strong>
+              </div>
+              <div class="balance-spent">
+                <span>累计消费 · {{ validActiveBillItems.length }}项</span>
+                <strong>¥{{ formatMoney(activeBillTotal) }}</strong>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -221,6 +243,7 @@ const themeStyle = computed(() => currentThemeOption.value.variables);
 const activeBill = computed(() => bills.value.find((bill) => bill.id === activeBillId.value));
 const grandTotal = computed(() => bills.value.reduce((total, bill) => total + billTotal(bill), 0));
 const activeBillTotal = computed(() => activeBill.value ? billTotal(activeBill.value) : 0);
+const activeBillRemaining = computed(() => activeBill.value ? Number(activeBill.value.totalAmount || 0) - activeBillTotal.value : 0);
 const validActiveBillItems = computed(() => activeBill.value ? getValidItems(activeBill.value.items) : []);
 
 const {
@@ -246,6 +269,10 @@ watch(deletedBills, saveDeletedBills, { deep: true });
 
 function billTotal(bill: Bill) {
   return sumBillItems(getValidItems(bill.items));
+}
+
+function billRemaining(bill: Bill) {
+  return Number(bill.totalAmount || 0) - billTotal(bill);
 }
 
 function saveBills() {
@@ -418,7 +445,7 @@ function createBillImage(bill: Bill) {
   const validItems = getValidItems(bill.items);
   const width = 900;
   const rowHeight = 64;
-  const listStartY = 256;
+  const listStartY = 326;
   const rowBottomOffset = 10;
   const footerGap = 50;
   const footerBottomSpace = 84;
@@ -447,6 +474,8 @@ function createBillImage(bill: Bill) {
   ctx.fillStyle = "#72808c";
   ctx.font = "24px Arial, sans-serif";
   ctx.fillText(`${validItems.length} 项`, 88, 164);
+  ctx.fillText(`总充值 ¥${formatMoney(Number(bill.totalAmount || 0))}`, 88, 206);
+  ctx.fillText(`剩余额 ¥${formatMoney(Number(bill.totalAmount || 0) - billTotal(bill))}`, 88, 246);
 
   ctx.fillStyle = "#1f6b7b";
   ctx.font = "700 44px Arial, sans-serif";
@@ -618,8 +647,7 @@ onUnmounted(() => {
 .summary-band span,
 .bill-card small,
 .empty-state span,
-.field-label span,
-.detail-total span {
+.field-label span {
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -694,9 +722,15 @@ onUnmounted(() => {
 
 .detail-summary {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
-  align-items: end;
+  align-items: stretch;
+}
+
+.budget-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: stretch;
 }
 
 .field-label {
@@ -732,29 +766,62 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.detail-total {
+.budget-input {
+  height: 54px;
+  color: var(--accent-strong);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.balance-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  justify-items: end;
-  min-width: 190px;
-  min-height: 92px;
+  gap: 12px;
+  min-width: 0;
+  min-height: 126px;
   padding: 14px 16px;
   border-radius: 14px;
   background: var(--stat-materials-bg);
   box-shadow: var(--stat-light-shadow);
 }
 
-.detail-total span {
+.balance-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  justify-items: end;
+}
+
+.balance-main span,
+.balance-spent span {
   justify-self: start;
+  color: var(--text-muted);
   font-weight: 700;
 }
 
-.detail-total strong {
+.balance-main strong {
   align-self: center;
   color: var(--accent-strong);
   font-size: 32px;
   line-height: 1.05;
+}
+
+.balance-spent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--accent-border) 32%, transparent);
+}
+
+.balance-spent span {
+  font-size: 12px;
+}
+
+.balance-spent strong {
+  color: var(--accent-strong);
+  font-size: 18px;
+  line-height: 1.1;
 }
 
 .detail-actions {
@@ -961,17 +1028,8 @@ onUnmounted(() => {
     border-radius: 12px;
   }
 
-  .detail-summary {
+  .budget-row {
     grid-template-columns: 1fr;
-  }
-
-  .detail-total {
-    justify-items: stretch;
-    min-width: 0;
-  }
-
-  .detail-total strong {
-    text-align: right;
   }
 
   .item-row {

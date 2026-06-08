@@ -9,6 +9,7 @@ export interface BillItem extends RSA {
 export interface Bill extends RSA {
   id: string;
   name: string;
+  totalAmount: number | "";
   items: BillItem[];
   createdAt: string;
   updatedAt: string;
