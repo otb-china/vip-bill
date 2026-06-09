@@ -231,7 +231,6 @@ const recyclePopup = ref(false);
 const bills = ref<Bill[]>([]);
 const deletedBills = ref<DeletedBill[]>([]);
 const activeBillId = ref("");
-const activeBillSnapshot = ref<{ id: string; name: string; totalAmount: Bill["totalAmount"] } | null>(null);
 
 const billStorage = LStorage.new("vipBillData");
 const recycleStorage = LStorage.new("vipBillRecycleBin");
@@ -304,7 +303,6 @@ function init() {
   deletedBills.value = purgeExpiredDeletedBills(normalizeDeletedBills(recycleStorage.getter()));
   if (activeBillId.value && !bills.value.some((bill) => bill.id === activeBillId.value)) {
     activeBillId.value = "";
-    activeBillSnapshot.value = null;
   }
 }
 
@@ -313,33 +311,18 @@ function addBill() {
   bill.items.push(createEmptyBillItem());
   bills.value.unshift(bill);
   activeBillId.value = bill.id;
-  snapshotActiveBill();
   nextTick(scrollToTop);
 }
 
 function openBill(id: string) {
   activeBillId.value = id;
-  snapshotActiveBill();
   nextTick(scrollToTop);
 }
 
 function closeBill() {
   pruneActiveBillInvalidItems();
-  removePristineEmptyBill();
+  removeInvalidEmptyBill();
   activeBillId.value = "";
-  activeBillSnapshot.value = null;
-}
-
-function snapshotActiveBill() {
-  if (!activeBill.value) {
-    activeBillSnapshot.value = null;
-    return;
-  }
-  activeBillSnapshot.value = {
-    id: activeBill.value.id,
-    name: activeBill.value.name,
-    totalAmount: activeBill.value.totalAmount,
-  };
 }
 
 function touchActiveBill() {
@@ -378,15 +361,13 @@ function pruneActiveBillInvalidItems() {
   touchActiveBill();
 }
 
-function removePristineEmptyBill() {
-  if (!activeBill.value || activeBill.value.items.length || isActiveBillProfileChanged()) return;
+function removeInvalidEmptyBill() {
+  if (!activeBill.value || activeBill.value.items.length || hasValidBillProfile(activeBill.value)) return;
   bills.value = bills.value.filter((bill) => bill.id !== activeBillId.value);
 }
 
-function isActiveBillProfileChanged() {
-  if (!activeBill.value || !activeBillSnapshot.value || activeBillSnapshot.value.id !== activeBill.value.id) return true;
-  return activeBill.value.name !== activeBillSnapshot.value.name
-    || activeBill.value.totalAmount !== activeBillSnapshot.value.totalAmount;
+function hasValidBillProfile(bill: Bill) {
+  return Boolean(bill.name.trim()) && bill.totalAmount !== "" && Number.isFinite(Number(bill.totalAmount));
 }
 
 function purgeExpiredDeletedBills(list: DeletedBill[]) {
