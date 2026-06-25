@@ -29,15 +29,17 @@
 
       <section class="bill-grid">
         <button
-          v-for="bill in bills"
+          v-for="bill in sortedBills"
           :key="bill.id"
           class="bill-card"
+          :class="{ 'is-empty': isBillRemainingEmpty(bill) }"
           type="button"
           @click="openBill(bill.id)"
         >
           <span>{{ bill.name }}</span>
           <strong>¥{{ formatMoney(billRemaining(bill)) }}</strong>
           <small>消费 ¥{{ formatMoney(billTotal(bill)) }}</small>
+          <em>{{ formatBillUpdatedAt(bill.updatedAt) }}</em>
         </button>
 
         <button class="add-bill-card" type="button" @click="addBill">
@@ -242,6 +244,13 @@ const currentThemeOption = computed(() => {
 const themeStyle = computed(() => currentThemeOption.value.variables);
 const activeBill = computed(() => bills.value.find((bill) => bill.id === activeBillId.value));
 const grandTotal = computed(() => bills.value.reduce((total, bill) => total + billTotal(bill), 0));
+const sortedBills = computed(() => {
+  return [...bills.value].sort((firstBill, secondBill) => {
+    const emptySort = Number(isBillRemainingEmpty(firstBill)) - Number(isBillRemainingEmpty(secondBill));
+    if (emptySort) return emptySort;
+    return getBillUpdatedTime(secondBill) - getBillUpdatedTime(firstBill);
+  });
+});
 const activeBillTotal = computed(() => activeBill.value ? billTotal(activeBill.value) : 0);
 const activeBillRemaining = computed(() => activeBill.value ? Number(activeBill.value.totalAmount || 0) - activeBillTotal.value : 0);
 const validActiveBillItems = computed(() => activeBill.value ? getValidItems(activeBill.value.items) : []);
@@ -273,6 +282,25 @@ function billTotal(bill: Bill) {
 
 function billRemaining(bill: Bill) {
   return Number(bill.totalAmount || 0) - billTotal(bill);
+}
+
+function isBillRemainingEmpty(bill: Bill) {
+  return billRemaining(bill) <= 0;
+}
+
+function getBillUpdatedTime(bill: Bill) {
+  const updatedTime = new Date(bill.updatedAt).getTime();
+  const createdTime = new Date(bill.createdAt).getTime();
+  if (Number.isFinite(updatedTime)) return updatedTime;
+  if (Number.isFinite(createdTime)) return createdTime;
+  return 0;
+}
+
+function formatBillUpdatedAt(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "--";
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function saveBills() {
@@ -675,7 +703,8 @@ onUnmounted(() => {
 
 .bill-card span,
 .bill-card strong,
-.bill-card small {
+.bill-card small,
+.bill-card em {
   display: block;
 }
 
@@ -693,6 +722,26 @@ onUnmounted(() => {
 
 .bill-card small {
   margin-top: 6px;
+}
+
+.bill-card em {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+
+.bill-card.is-empty {
+  background: color-mix(in srgb, var(--surface) 84%, #d9e0e7);
+  opacity: 0.82;
+}
+
+.bill-card.is-empty span,
+.bill-card.is-empty strong,
+.bill-card.is-empty small,
+.bill-card.is-empty em {
+  color: color-mix(in srgb, var(--text-muted) 82%, var(--text-main));
 }
 
 .add-bill-card {
