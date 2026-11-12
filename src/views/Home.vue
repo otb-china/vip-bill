@@ -188,8 +188,7 @@
 
     <ImportDataPopup
       v-model:show="importExportInfo.show"
-      :has-overwrite-data="hasImportOverwriteData"
-      :summary="importExportSummary"
+      :bill-count="bills.length"
       :file-name="importInfo.fileName"
       :has-file="Boolean(importInfo.dataStr)"
       @file-loaded="onImportFileLoaded"
@@ -213,6 +212,7 @@ import {
   createEmptyBillItem,
   createId,
   formatMoney,
+  getBillUpdatedTime,
   normalizeDeletedBills,
   normalizeBills,
   sumBillItems,
@@ -258,8 +258,6 @@ const validActiveBillItems = computed(() => activeBill.value ? getValidItems(act
 const {
   importExportInfo,
   importInfo,
-  importExportSummary,
-  hasImportOverwriteData,
   openImportExport,
   exportAllData,
   onImportFileLoaded,
@@ -286,14 +284,6 @@ function billRemaining(bill: Bill) {
 
 function isBillRemainingEmpty(bill: Bill) {
   return billRemaining(bill) <= 0;
-}
-
-function getBillUpdatedTime(bill: Bill) {
-  const updatedTime = new Date(bill.updatedAt).getTime();
-  const createdTime = new Date(bill.createdAt).getTime();
-  if (Number.isFinite(updatedTime)) return updatedTime;
-  if (Number.isFinite(createdTime)) return createdTime;
-  return 0;
 }
 
 function formatBillUpdatedAt(value: string) {

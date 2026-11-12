@@ -31,10 +31,34 @@ export function formatMoney(value: number) {
   return Number(value || 0).toFixed(2);
 }
 
-export function normalizeBills(list: RSA[] | undefined): Bill[] {
+export function getBillUpdatedTime(bill: Bill) {
+  const updatedTime = Date.parse(bill.updatedAt);
+  if (Number.isFinite(updatedTime)) return updatedTime;
+  const createdTime = Date.parse(bill.createdAt);
+  return Number.isFinite(createdTime) ? createdTime : 0;
+}
+
+export function mergeLatest<T>(
+  current: T[],
+  imported: T[],
+  getKey: (entry: T) => string,
+  getTime: (entry: T) => number,
+): T[] {
+  const latest = new Map<string, T>();
+  for (const entry of [...current, ...imported]) {
+    const key = getKey(entry);
+    const previous = latest.get(key);
+    if (previous === undefined || getTime(entry) > getTime(previous)) {
+      latest.set(key, entry);
+    }
+  }
+  return [...latest.values()];
+}
+
+export function normalizeBills(list: RSA[] | undefined, fallbackDate = new Date().toISOString()): Bill[] {
   const source = Array.isArray(list) ? list : [];
   return source.map((item): Bill => {
-    const createdAt = String(item.createdAt || new Date().toISOString());
+    const createdAt = String(item.createdAt || fallbackDate);
     return {
       id: String(item.id || createId("bill")),
       name: String(item.name || "未命名账单"),

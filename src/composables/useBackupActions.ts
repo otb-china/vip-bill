@@ -1,8 +1,14 @@
-import { computed, ref, type Ref } from "vue";
+import { ref, type Ref } from "vue";
 import dayjs from "dayjs";
 import { showConfirmDialog, showToast } from "vant";
 import { LStorage } from "@/utils/localStorage.ts";
-import { normalizeBills, normalizeDeletedBills } from "@/utils/billData.ts";
+import {
+  createId,
+  getBillUpdatedTime,
+  mergeLatest,
+  normalizeBills,
+  normalizeDeletedBills,
+} from "@/utils/billData.ts";
 import type { Bill, DeletedBill, VipBillBackupData } from "@/types/bill";
 
 interface UseBackupActionsOptions {
@@ -20,14 +26,6 @@ export function useBackupActions(options: UseBackupActionsOptions) {
   const importInfo = ref({
     dataStr: "",
     fileName: "",
-  });
-
-  const importExportSummary = computed(() => {
-    return `导入后将覆盖 ${options.bills.value.length} 个账单`;
-  });
-
-  const hasImportOverwriteData = computed(() => {
-    return options.bills.value.length > 0;
   });
 
   function openImportExport() {
@@ -87,16 +85,36 @@ export function useBackupActions(options: UseBackupActionsOptions) {
       if (!parsedData || typeof parsedData !== "object" || Array.isArray(parsedData)) {
         throw new Error("Invalid backup data");
       }
-      const bills = normalizeBills(parsedData.bills);
+      const bills = normalizeBills(parsedData.bills, new Date(0).toISOString());
       const deletedBills = normalizeDeletedBills(parsedData.deletedBills);
       if (!Array.isArray(parsedData.bills) || bills.length !== parsedData.bills.length) {
         throw new Error("Invalid bills");
       }
-      LStorage.new("vipBillData").setter(bills);
-      if (deletedBills.length) {
-        LStorage.new("vipBillRecycleBin").setter(deletedBills);
-      } else {
-        LStorage.new("vipBillRecycleBin").remove();
+      const currentBills = options.bills.value;
+      const mergedBills = mergeLatest(currentBills, bills, (bill) => bill.name, getBillUpdatedTime);
+      const mergedDeletedBills = mergeLatest(
+        options.deletedBills.value,
+        deletedBills,
+        (bill) => bill.id,
+        (bill) => Date.parse(bill.deletedAt) || 0,
+      );
+
+      // A renamed bill can share an ID with a different name in the backup.
+      const currentNamesById = new Map(currentBills.map((bill) => [bill.id, bill.name]));
+      const usedIds = new Set<string>();
+      const uniqueBills = mergedBills.map((bill) => {
+        const currentName = currentNamesById.get(bill.id);
+        let id = bill.id;
+        if (usedIds.has(id) || (currentName !== undefined && currentName !== bill.name)) {
+          id = createId("bill");
+        }
+        usedIds.add(id);
+        return id === bill.id ? bill : { ...bill, id };
+      });
+
+      LStorage.new("vipBillData").setter(uniqueBills);
+      if (mergedDeletedBills.length) {
+        LStorage.new("vipBillRecycleBin").setter(mergedDeletedBills);
       }
       options.initData();
       importExportInfo.value.show = false;
@@ -111,8 +129,6 @@ export function useBackupActions(options: UseBackupActionsOptions) {
   return {
     importExportInfo,
     importInfo,
-    importExportSummary,
-    hasImportOverwriteData,
     openImportExport,
     createBackupData,
     exportAllData,

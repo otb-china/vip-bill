@@ -5,14 +5,14 @@
         <div>
           <p class="section-tag">Data</p>
           <h3>导入总数据</h3>
-          <p>选择导出的备份文件，会覆盖当前全部账单。</p>
+          <p>备份账单会与当前账单合并，同名时保留更新时间较新的一条。</p>
         </div>
       </div>
 
-      <div v-if="hasOverwriteData" class="import-export-card">
+      <div v-if="billCount" class="import-export-card">
         <div>
           <strong>当前数据</strong>
-          <span>{{ summary }}</span>
+          <span>{{ billCount }} 个账单</span>
         </div>
       </div>
 
@@ -53,8 +53,7 @@ import { Upload } from "@element-plus/icons-vue";
 
 const props = defineProps<{
   show: boolean;
-  hasOverwriteData: boolean;
-  summary: string;
+  billCount: number;
   fileName: string;
   hasFile: boolean;
 }>();
