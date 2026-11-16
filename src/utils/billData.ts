@@ -20,6 +20,7 @@ export function createEmptyBillItem(): BillItem {
     id: createId("item"),
     name: "",
     price: "",
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -70,6 +71,7 @@ export function normalizeBills(list: RSA[] | undefined, fallbackDate = new Date(
           id: String(child.id || createId("item")),
           name: String(child.name || ""),
           price: normalizePrice(child.price),
+          createdAt: normalizeItemCreatedAt(child),
         }))
         : [],
     };
@@ -82,6 +84,15 @@ export function normalizeDeletedBills(list: RSA[] | undefined): DeletedBill[] {
     ...item,
     deletedAt: String(source[index]?.deletedAt || new Date().toISOString()),
   }));
+}
+
+function normalizeItemCreatedAt(item: RSA): string | undefined {
+  if (typeof item.createdAt === "string" && Number.isFinite(Date.parse(item.createdAt))) {
+    return item.createdAt;
+  }
+  // Older records encoded their creation time in the generated item ID.
+  const timestamp = /^item-(\d{13})-[a-z0-9]{0,6}$/.exec(String(item.id || ""))?.[1];
+  return timestamp ? new Date(Number(timestamp)).toISOString() : undefined;
 }
 
 function normalizePrice(value: unknown): number | "" {

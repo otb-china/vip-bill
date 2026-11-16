@@ -44,9 +44,11 @@
           <strong class="bill-card-amount">¥{{ formatMoney(billRemaining(bill)) }}</strong>
           <span class="usage-bar" aria-hidden="true"><span :style="{ width: billUsedPercent(bill) + '%' }"></span></span>
           <span class="bill-card-footer">
-            <time class="bill-card-date" :datetime="bill.updatedAt" :title="formatBillUpdatedAt(bill.updatedAt)">
-              {{ formatBillUpdatedAt(bill.updatedAt, true) }}
-            </time>
+            <span>
+              <time v-if="bill.latestConsumptionAt" :datetime="bill.latestConsumptionAt" :title="formatConsumptionDate(bill.latestConsumptionAt)">
+                {{ formatConsumptionDate(bill.latestConsumptionAt, true) }}
+              </time>
+            </span>
             <span>已用 {{ billUsedPercent(bill) }}%</span>
           </span>
         </button>
@@ -296,8 +298,22 @@ const sortedBills = computed(() => {
 });
 const visibleBills = computed(() => {
   const keyword = billSearch.value.trim().toLowerCase();
-  if (!keyword) return sortedBills.value;
-  return sortedBills.value.filter((bill) => bill.name.toLowerCase().includes(keyword));
+  const matchingBills = keyword
+    ? sortedBills.value.filter((bill) => bill.name.toLowerCase().includes(keyword))
+    : sortedBills.value;
+  return matchingBills.map((bill) => {
+    let latestConsumptionAt: string | undefined;
+    let latestTime = -Infinity;
+    for (const item of getValidItems(bill.items)) {
+      if (!item.createdAt) continue;
+      const time = Date.parse(item.createdAt);
+      if (time > latestTime) {
+        latestTime = time;
+        latestConsumptionAt = item.createdAt;
+      }
+    }
+    return { ...bill, latestConsumptionAt };
+  });
 });
 const activeBillTotal = computed(() => activeBill.value ? billTotal(activeBill.value) : 0);
 const activeBillRemaining = computed(() => activeBill.value ? Number(activeBill.value.totalAmount || 0) - activeBillTotal.value : 0);
@@ -354,7 +370,7 @@ function isBillRemainingEmpty(bill: Bill) {
   return billRemaining(bill) <= 0;
 }
 
-function formatBillUpdatedAt(value: string, dateOnly = false) {
+function formatConsumptionDate(value: string, dateOnly = false) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "--";
   const pad = (num: number) => String(num).padStart(2, "0");
