@@ -101,6 +101,9 @@
               <strong>¥{{ formatMoney(activeBillTotal) }}</strong>
             </div>
           </div>
+          <div class="balance-progress" aria-hidden="true">
+            <span :style="{ width: Math.min(100, (activeBillTotal / (Number(activeBill.totalAmount) || 1)) * 100) + '%' }"></span>
+          </div>
         </div>
       </section>
 
@@ -1150,5 +1153,44 @@ onUnmounted(() => {
   .recycle-actions {
     justify-content: flex-end;
   }
+}
+
+/* detail page refresh */
+.bill-detail-view { gap: 20px; padding-top: 4px; }
+.bill-editor { padding: 0; background: transparent; }
+.title-field { gap: 10px; margin-bottom: 16px; }
+.detail-back-button, .bill-delete-button { flex-basis: 42px; min-height: 42px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); color: var(--text-main); }
+.title-input { font-size: 22px; }
+.balance-card {
+  position: relative; overflow: hidden; gap: 22px; padding: 22px 22px 20px; border-radius: 22px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent-strong) 88%, #fff) 0%, var(--accent-strong) 55%, color-mix(in srgb, var(--accent-strong) 75%, #000) 100%);
+  color: #fff; box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-strong) 28%, transparent);
+}
+.balance-card::after { content: ""; position: absolute; top: -60px; right: -50px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,.08); pointer-events: none; }
+.balance-main, .balance-stat { position: relative; z-index: 1; color: rgba(255,255,255,.72); }
+.balance-main strong { color: #fff; font-size: clamp(36px, 11vw, 50px); letter-spacing: -.5px; }
+.balance-breakdown { position: relative; z-index: 1; gap: 10px; }
+.balance-stat { padding: 10px 12px 4px; border-radius: 14px; background: rgba(255,255,255,.12); }
+.balance-card .editable-budget, .balance-card .balance-stat strong { min-height: 40px; color: #fff; font-size: 18px; }
+.balance-card .editable-budget .el-icon { color: rgba(255,255,255,.7); }
+.balance-card .text-input:focus { outline-color: rgba(255,255,255,.8); background: rgba(255,255,255,.14); }
+.balance-card .text-input::placeholder { color: rgba(255,255,255,.6); }
+.balance-progress { position: relative; z-index: 1; height: 6px; border-radius: 999px; background: rgba(255,255,255,.18); overflow: hidden; }
+.balance-progress span { display: block; height: 100%; border-radius: inherit; background: #fff; transition: width .3s ease; }
+.items-panel { padding: 0; background: transparent; }
+.section-row { margin-bottom: 10px; padding-inline: 4px; }
+.items-heading span { padding: 2px 8px; border-radius: 999px; background: var(--header-icon-bg); color: var(--accent-strong); font-size: 12px; font-weight: 600; }
+.add-item-row { min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--header-icon-bg); font-size: 13px; }
+.item-list { display: grid; gap: 10px; }
+.item-swipe { border-top: 0; border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); }
+.item-row { align-items: center; padding: 8px 6px 8px 16px; }
+.item-amount { font-size: 15px; }
+.price-input { font-size: 22px; }
+.item-note { margin: -4px 0 8px 6px; }
+.swipe-delete-action { margin-left: 0; border-radius: 0 16px 16px 0; }
+.items-empty { padding: 32px 0; border-radius: 16px; background: var(--surface); text-align: center; }
+@media (max-width: 520px) {
+  .bill-editor, .items-panel { padding: 0; border-radius: 0; }
+  .balance-card { padding: 20px 18px 18px; border-radius: 20px; }
 }
 </style>
