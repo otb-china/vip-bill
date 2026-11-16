@@ -176,3 +176,141 @@ html::-webkit-scrollbar {
   font-size: 12px;
   line-height: 1.35;
 }
+
+/* ---------- unified popup / dialog / toast ---------- */
+:root {
+  --van-overlay-background: rgba(15, 25, 35, 0.45);
+}
+
+.van-popup {
+  background: var(--surface, #fff);
+  color: var(--text-main, #203747);
+}
+
+.van-popup--bottom.van-popup--round {
+  border-radius: 24px 24px 0 0;
+}
+
+.van-popup--bottom .popup-body {
+  position: relative;
+  padding: 26px 18px calc(24px + env(safe-area-inset-bottom));
+}
+
+.van-popup--bottom .popup-body::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--divider, #e5e9ef);
+  transform: translateX(-50%);
+}
+
+.popup-head h3 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.popup-head p {
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.popup-body button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.van-dialog {
+  width: min(300px, 82vw) !important;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--surface, #fff);
+  box-shadow: 0 20px 50px rgba(15, 25, 35, 0.2);
+}
+
+.van-dialog__header {
+  padding-top: 24px;
+  color: var(--text-strong, #172839);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.van-dialog__message {
+  padding: 10px 22px 22px;
+  color: var(--text-muted, #6f7f8c);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.van-dialog__footer {
+  gap: 10px;
+  padding: 0 18px 18px;
+}
+
+.van-dialog__footer .van-button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.van-dialog__cancel {
+  background: var(--surface-muted, #eef2f6);
+  color: var(--text-main, #203747) !important;
+}
+
+.van-dialog__confirm {
+  background: var(--danger-text, #d05f52);
+  color: #fff !important;
+}
+
+.van-dialog__footer.van-hairline--top::after,
+.van-dialog__cancel.van-hairline--left::after,
+.van-dialog__confirm.van-hairline--left::after {
+  display: none;
+}
+
+.van-toast {
+  border-radius: 14px;
+  background: rgba(20, 32, 44, 0.86);
+  backdrop-filter: blur(6px);
+  font-size: 14px;
+}
+
+.settings-item-icon {
+  border-radius: 12px !important;
+  background: var(--accent-soft, #e6eff7) !important;
+  color: var(--accent-strong, #245f88) !important;
+  box-shadow: none !important;
+  font-size: 18px;
+}
+
+.settings-item-feature.danger .settings-item-icon {
+  background: var(--surface, #fff) !important;
+  color: var(--danger-text, #d05f52) !important;
+}
+
+.submit-button {
+  height: 48px;
+  margin-top: 20px;
+  border-radius: 14px;
+  background: var(--hero-bg, var(--submit-btn-bg));
+  box-shadow: var(--hero-shadow, var(--submit-btn-shadow));
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.submit-button:hover,
+.submit-button:focus {
+  background: var(--hero-bg, var(--submit-btn-bg));
+}
+
+.submit-button.is-disabled,
+.submit-button.is-disabled:hover,
+.submit-button.is-disabled:focus {
+  background: var(--hero-bg, var(--submit-btn-bg));
+}

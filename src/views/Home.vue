@@ -196,7 +196,7 @@
         <div class="popup-head">
           <div>
             <h3>回收站</h3>
-            <p>删除的账单保留 7 天，可在这里恢复。</p>
+            <p>删除的账单保留 7 天，可在这里恢复</p>
           </div>
         </div>
 
@@ -283,6 +283,9 @@ const currentThemeOption = computed(() => {
   return themeOptions.find((theme) => theme.key === currentTheme.value) || themeOptions[0];
 });
 const themeStyle = computed(() => currentThemeOption.value.variables);
+watch(themeStyle, (variables) => {
+  Object.entries(variables).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
+}, { immediate: true });
 const activeBill = computed(() => bills.value.find((bill) => bill.id === activeBillId.value));
 const sortedBills = computed(() => {
   return [...bills.value].sort((firstBill, secondBill) => {
@@ -1101,22 +1104,22 @@ onUnmounted(() => {
 
 .item-row {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 10px 12px 10px 14px;
+  gap: 10px;
+  min-height: 60px;
+  padding: 10px 12px;
 }
 
 .item-index {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
   background: var(--accent-soft);
   color: var(--accent-strong);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -1128,24 +1131,36 @@ onUnmounted(() => {
 .item-note-input {
   display: block;
   width: 100%;
-  height: 34px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 6px 8px;
   border: 1.5px dashed transparent;
   border-radius: 10px;
   color: var(--text-main);
   font-size: 15px;
-  line-height: 31px;
+  line-height: 1.4;
   text-align: left;
 }
 
 .item-note {
+  display: -webkit-box;
   overflow: hidden;
   background: transparent;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.item-note:not(.is-placeholder) {
+  padding-left: 2px;
 }
 
 .item-note.is-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  max-width: 100%;
+  padding-inline: 10px;
   border-color: var(--divider);
   color: var(--text-subtle);
   font-size: 13px;
@@ -1162,7 +1177,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 2px;
-  height: 38px;
+  height: 36px;
   padding: 0 10px;
   border: 1.5px dashed var(--accent-border);
   border-radius: 10px;
@@ -1182,9 +1197,12 @@ onUnmounted(() => {
 }
 
 .price-input {
-  width: 5.5em;
+  width: auto;
+  min-width: 1em;
+  max-width: 6.5em;
   padding: 0;
-  font-size: 18px;
+  font-size: 17px;
+  field-sizing: content;
   font-weight: 700;
   text-align: right;
 }
@@ -1221,16 +1239,10 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-.popup-head p {
-  margin: 4px 0 0;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
 .recycle-list {
   display: grid;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .recycle-item {
@@ -1238,8 +1250,8 @@ onUnmounted(() => {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 14px;
+  border-radius: 16px;
   background: var(--surface-soft);
 }
 
@@ -1250,11 +1262,12 @@ onUnmounted(() => {
 
 .recycle-item strong {
   color: var(--text-strong);
+  font-size: 15px;
 }
 
 .recycle-item span {
   margin-top: 4px;
-  color: var(--text-muted);
+  color: var(--text-subtle);
   font-size: 12px;
 }
 
@@ -1265,12 +1278,12 @@ onUnmounted(() => {
 
 .recycle-actions button {
   height: 34px;
-  padding: 0 12px;
+  padding: 0 14px;
   border: 0;
   border-radius: 999px;
-  background: var(--header-icon-bg);
-  color: var(--accent);
-  font-size: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13px;
   font-weight: 700;
 }
 

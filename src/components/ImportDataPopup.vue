@@ -3,7 +3,6 @@
     <div class="popup-body import-export-popup">
       <div class="popup-head">
         <div>
-          <p class="section-tag">Data</p>
           <h3>导入总数据</h3>
           <p>备份账单会与当前账单合并，同名时保留更新时间较新的一条。</p>
         </div>
@@ -11,8 +10,8 @@
 
       <div v-if="billCount" class="import-export-card">
         <div>
-          <strong>当前数据</strong>
-          <span>{{ billCount }} 个账单</span>
+          <span>当前数据</span>
+          <strong>{{ billCount }} 个账单</strong>
         </div>
       </div>
 
@@ -24,7 +23,7 @@
         @change="onFileChange"
       />
 
-      <button class="file-upload-card" type="button" @click="selectFile">
+      <button class="file-upload-card" :class="{ 'is-ready': hasFile }" type="button" @click="selectFile">
         <span class="settings-item-icon">
           <el-icon><Upload /></el-icon>
         </span>
@@ -100,16 +99,49 @@ const onFileChange = async (event: Event) => {
 </script>
 
 <style lang="scss" scoped>
-.section-tag {
-  margin: 0 0 4px;
-  color: var(--text-muted);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 .file-input {
   display: none;
+}
+
+.import-export-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--hero-bg);
+  box-shadow: var(--hero-shadow);
+  color: #fff;
+}
+
+.import-export-card::after {
+  content: "";
+  position: absolute;
+  top: -50px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--hero-glow) 0%, transparent 70%);
+}
+
+.import-export-card span,
+.import-export-card strong {
+  display: block;
+}
+
+.import-export-card span {
+  font-size: 12px;
+  opacity: 0.78;
+}
+
+.import-export-card strong {
+  margin-top: 2px;
+  font-size: 22px;
 }
 
 .file-upload-card {
@@ -117,12 +149,23 @@ const onFileChange = async (event: Event) => {
   align-items: center;
   gap: 12px;
   width: 100%;
-  margin-top: 14px;
-  padding: 14px;
-  border: 1px dashed var(--divider);
-  border-radius: 12px;
-  background: var(--surface-soft);
+  margin-top: 12px;
+  padding: 16px;
+  border: 1.5px dashed var(--accent-border);
+  border-radius: 16px;
+  background: var(--accent-soft);
   text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.file-upload-card:is(:hover, :focus-visible) {
+  border-color: var(--accent);
+}
+
+.file-upload-card.is-ready {
+  border-style: solid;
+  border-color: var(--accent);
 }
 
 .file-upload-card > span:last-child {
@@ -135,46 +178,18 @@ const onFileChange = async (event: Event) => {
 }
 
 .file-upload-card strong {
-  color: var(--text-main);
-  font-size: 14px;
+  color: var(--text-strong);
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .file-upload-card em {
-  margin-top: 4px;
-  color: var(--text-muted);
+  margin-top: 3px;
+  color: var(--text-subtle);
   font-size: 12px;
   font-style: normal;
   line-height: 1.35;
 }
-
-.import-export-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 14px 0 12px;
-  padding: 14px;
-  border-radius: 10px;
-  background: var(--stat-income-bg);
-  color: #ffffff;
-}
-
-.import-export-card strong,
-.import-export-card span {
-  display: block;
-}
-
-.import-export-card strong {
-  font-size: 16px;
-}
-
-.import-export-card span {
-  margin-top: 4px;
-  font-size: 12px;
-  opacity: 0.8;
-}
-
 </style>
