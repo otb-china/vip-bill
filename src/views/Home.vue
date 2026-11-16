@@ -1,17 +1,13 @@
 <template>
   <div class="home-page" :style="themeStyle">
-    <header class="page-header">
+    <header v-if="!activeBill" class="page-header">
       <div>
-        <p v-if="activeBill" class="hero-tag">Vip Bill</p>
         <div class="header-title">
-          <h1>{{ activeBill ? "账单明细" : "会员账单" }}</h1>
-          <span v-if="!activeBill" class="header-bill-count">{{ bills.length }} 个账单</span>
+          <h1>会员账单</h1>
+          <span class="header-bill-count">{{ bills.length }} 个账单</span>
         </div>
       </div>
       <div class="header-actions">
-        <button v-if="activeBill" class="header-icon" type="button" aria-label="返回账单列表" @click="closeBill">
-          <el-icon><Back /></el-icon>
-        </button>
         <button v-if="showScrollTop" class="header-icon" type="button" aria-label="回到顶部" @click="scrollToTop">
           <el-icon><Top /></el-icon>
         </button>
@@ -19,7 +15,7 @@
           <el-icon><Setting /></el-icon>
         </button>
       </div>
-      <div v-if="!activeBill" class="bill-toolbar">
+      <div class="bill-toolbar">
         <label class="bill-search">
           <el-icon aria-hidden="true"><Search /></el-icon>
           <input v-model="billSearch" type="search" aria-label="搜索账单" placeholder="搜索账单" @keydown.esc="billSearch = ''" />
@@ -41,15 +37,14 @@
           type="button"
           @click="openBill(bill.id)"
         >
-          <span class="bill-card-name">{{ bill.name }}</span>
+          <span class="bill-card-heading">
+            <span class="bill-card-name">{{ bill.name }}</span>
+            <span class="bill-card-balance-mark" role="img" aria-label="剩余金额">余</span>
+          </span>
           <strong class="bill-card-amount">¥{{ formatMoney(billRemaining(bill)) }}</strong>
-          <small class="bill-card-spent">消费 ¥{{ formatMoney(billTotal(bill)) }}</small>
-          <small class="bill-card-meta">
-            <span>累计 {{ getValidItems(bill.items).length }} 项</span>
-            <time :datetime="bill.updatedAt" :title="formatBillUpdatedAt(bill.updatedAt)">
-              {{ formatBillUpdatedAt(bill.updatedAt, true) }}
-            </time>
-          </small>
+          <time class="bill-card-date" :datetime="bill.updatedAt" :title="formatBillUpdatedAt(bill.updatedAt)">
+            {{ formatBillUpdatedAt(bill.updatedAt, true) }}
+          </time>
         </button>
       </section>
 
@@ -63,77 +58,105 @@
       </div>
     </main>
 
-    <main v-else class="bill-detail-view">
-      <section class="bill-editor">
-        <div class="detail-summary">
-          <div class="field-label title-field">
-            <label for="bill-name">VIP NAME</label>
-            <button class="icon-button danger bill-delete-button" type="button" aria-label="删除账单" title="删除账单" @click="removeActiveBill">
-              <el-icon aria-hidden="true"><Delete /></el-icon>
-            </button>
-            <input id="bill-name" v-model.trim="activeBill.name" class="text-input title-input" placeholder="账单名" @input="touchActiveBill" />
+    <main v-else class="bill-detail-view" aria-label="账单明细">
+      <section class="bill-editor" aria-label="账单概览">
+        <div class="title-field">
+          <button class="detail-back-button" type="button" aria-label="返回账单列表" title="返回账单列表" @click="closeBill">
+            <el-icon aria-hidden="true"><Back /></el-icon>
+          </button>
+          <label class="editable-name">
+            <input v-model.trim="activeBill.name" class="text-input title-input" aria-label="账单名" placeholder="账单名" @input="touchActiveBill" />
+            <el-icon aria-hidden="true"><EditPen /></el-icon>
+          </label>
+          <button class="bill-delete-button" type="button" aria-label="删除账单" title="删除账单" @click="removeActiveBill">
+            <el-icon aria-hidden="true"><Delete /></el-icon>
+          </button>
+        </div>
+
+        <div class="balance-card">
+          <div class="balance-main">
+            <span>剩余金额</span>
+            <strong>¥{{ formatMoney(activeBillRemaining) }}</strong>
           </div>
-
-          <div class="budget-row">
-            <label class="field-label budget-field">
+          <div class="balance-breakdown">
+            <label class="balance-stat">
               <span>总充值</span>
-              <input
-                v-model.number="activeBill.totalAmount"
-                class="text-input budget-input"
-                type="number"
-                inputmode="decimal"
-                min="0"
-                step="0.01"
-                placeholder="总充值"
-                @input="touchActiveBill"
-              />
+              <span class="editable-budget">
+                <span aria-hidden="true">¥</span>
+                <input
+                  v-model.number="activeBill.totalAmount"
+                  class="text-input budget-input"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  @input="touchActiveBill"
+                />
+                <el-icon aria-hidden="true"><EditPen /></el-icon>
+              </span>
             </label>
-
-            <div class="balance-card">
-              <div class="balance-main">
-                <span>剩余额</span>
-                <strong>¥{{ formatMoney(activeBillRemaining) }}</strong>
-              </div>
-              <div class="balance-spent">
-                <span>累计消费 · {{ validActiveBillItems.length }}项</span>
-                <strong>¥{{ formatMoney(activeBillTotal) }}</strong>
-              </div>
+            <div class="balance-stat">
+              <span>累计消费</span>
+              <strong>¥{{ formatMoney(activeBillTotal) }}</strong>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="items-panel">
+      <section class="items-panel" aria-labelledby="items-heading">
         <div class="section-row">
-          <div>
-            <p class="section-tag">Items</p>
+          <div class="items-heading">
+            <h2 id="items-heading">消费明细</h2>
+            <span>{{ validActiveBillItems.length }} 项</span>
           </div>
-        </div>
-
-        <div class="item-list">
           <button class="add-item-row" type="button" @click="addItem">
-            <el-icon><Plus /></el-icon>
+            <el-icon aria-hidden="true"><Plus /></el-icon>
             <span>新增子项</span>
           </button>
+        </div>
 
+        <p v-if="!activeBill.items.length" class="items-empty">暂无消费记录</p>
+        <div v-else class="item-list">
           <van-swipe-cell v-for="item in activeBill.items" :key="item.id" class="item-swipe">
             <div class="item-row">
-              <label class="item-field item-price-field">
-                <span>金额</span>
+              <div class="item-content">
+                <label class="item-amount">
+                  <span aria-hidden="true">¥</span>
+                  <input
+                    v-model.number="item.price"
+                    class="text-input price-input"
+                    aria-label="金额"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="输入金额"
+                    @input="touchActiveBill"
+                  />
+                </label>
                 <input
-                  v-model.number="item.price"
-                  class="text-input price-input"
-                  type="number"
-                  inputmode="decimal"
-                  min="0"
-                  step="0.01"
+                  v-if="editingNoteId === item.id"
+                  v-focus-note
+                  v-model.trim="item.name"
+                  class="text-input item-note-input"
+                  aria-label="备注（选填）"
+                  placeholder="备注（选填）"
                   @input="touchActiveBill"
+                  @blur="editingNoteId = null"
+                  @keydown.enter="finishItemNote"
                 />
-              </label>
-              <label class="item-field item-name-field">
-                <span>备注</span>
-                <input v-model.trim="item.name" class="text-input" @input="touchActiveBill" />
-              </label>
+                <p v-else-if="item.name.trim()" class="item-note">{{ item.name }}</p>
+              </div>
+              <button
+                class="item-note-button"
+                type="button"
+                :aria-label="item.name.trim() ? '编辑备注' : '添加备注'"
+                :title="item.name.trim() ? '编辑备注' : '添加备注'"
+                @click="editingNoteId = item.id"
+              >
+                <el-icon aria-hidden="true"><EditPen /></el-icon>
+              </button>
             </div>
             <template #right>
               <button class="swipe-delete-action" type="button" aria-label="删除子项" @click="removeItem(item.id)">
@@ -203,7 +226,7 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { showConfirmDialog, showToast } from "vant";
-import { Back, Delete, Plus, Search, Setting, Top } from "@element-plus/icons-vue";
+import { Back, Delete, EditPen, Plus, Search, Setting, Top } from "@element-plus/icons-vue";
 import ImportDataPopup from "@/components/ImportDataPopup.vue";
 import SettingsPopup from "@/components/SettingsPopup.vue";
 import { DEFAULT_THEME, isThemeKey, themeOptions } from "@/config/themes";
@@ -235,6 +258,12 @@ const bills = ref<Bill[]>([]);
 const billSearch = ref("");
 const deletedBills = ref<DeletedBill[]>([]);
 const activeBillId = ref("");
+const editingNoteId = ref<string | null>(null);
+const vFocusNote = {
+  mounted(input: HTMLInputElement) {
+    input.focus();
+  },
+};
 let billListScrollY = 0;
 
 const billStorage = LStorage.new("vipBillData");
@@ -282,6 +311,7 @@ watch(bills, saveBills, { deep: true });
 watch(deletedBills, saveDeletedBills, { deep: true });
 
 watch(() => activeBill.value?.id, async (billId, previousBillId) => {
+  editingNoteId.value = null;
   if (!previousBillId && billId) {
     billListScrollY = window.scrollY;
   }
@@ -365,6 +395,13 @@ function closeBill() {
 function touchActiveBill() {
   if (!activeBill.value) return;
   activeBill.value.updatedAt = new Date().toISOString();
+}
+
+function finishItemNote(event: KeyboardEvent) {
+  if (event.isComposing) return;
+  if (event.currentTarget instanceof HTMLInputElement) {
+    event.currentTarget.blur();
+  }
 }
 
 function addItem() {
@@ -516,21 +553,10 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin: -12px -12px 12px;
-  padding: 18px max(18px, calc((100vw - 780px) / 2 + 18px)) 16px;
-  background: var(--surface);
-  box-shadow: var(--header-shadow);
-  backdrop-filter: blur(12px);
-}
-
-.hero-tag,
-.section-tag {
-  margin: 0 0 4px;
-  color: var(--text-muted);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  padding: 16px max(12px, calc((100vw - 780px) / 2)) 4px;
+  background: var(--page-bg);
 }
 
 .header-title {
@@ -543,19 +569,14 @@ onUnmounted(() => {
 .page-header h1 {
   margin: 0;
   color: var(--text-strong);
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.08;
   white-space: nowrap;
 }
 
-.header-actions,
-.section-row,
-.item-row {
+.header-actions {
   display: flex;
   align-items: center;
-}
-
-.header-actions {
   gap: 8px;
 }
 
@@ -573,7 +594,7 @@ onUnmounted(() => {
   padding: 0 12px;
   border: 1px solid var(--divider);
   border-radius: 12px;
-  background: var(--field-bg);
+  background: var(--surface);
   color: var(--text-subtle);
 }
 
@@ -598,8 +619,7 @@ onUnmounted(() => {
 }
 
 .header-icon,
-.add-bill-button,
-.icon-button {
+.add-bill-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -628,18 +648,11 @@ onUnmounted(() => {
   font-size: 16px;
 }
 
-.icon-button.danger {
-  background: var(--danger-bg);
-  color: var(--danger-text);
-}
-
 .bill-editor,
 .items-panel {
-  margin-bottom: 14px;
-  padding: 20px;
+  padding: 16px 20px 20px;
   border-radius: 16px;
   background: var(--surface);
-  box-shadow: 0 14px 34px rgba(38, 56, 88, 0.08);
 }
 
 .header-bill-count {
@@ -647,9 +660,7 @@ onUnmounted(() => {
 }
 
 .header-bill-count,
-.empty-state span,
-.field-label span,
-.title-field label {
+.empty-state span {
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -664,13 +675,15 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 13px 16px;
+  padding: 14px 16px;
   border: 0;
   border-radius: 14px;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  color: var(--text-main);
+  font: inherit;
   text-align: left;
   overflow-wrap: anywhere;
+  cursor: pointer;
 }
 
 .bill-card:focus-visible {
@@ -678,57 +691,64 @@ onUnmounted(() => {
   outline-offset: 2px;
 }
 
-.bill-card:active {
-  background: var(--surface-soft);
+.bill-card:is(:hover, :active) {
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+
+.bill-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .bill-card-name {
+  min-width: 0;
   color: var(--text-strong);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
 }
 
-.bill-card-amount {
+.bill-card-balance-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   color: var(--accent-strong);
-  margin-top: 8px;
-  font-size: clamp(22px, 6.4vw, 28px);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.bill-card-spent {
-  padding: 3px 0 6px;
-  color: var(--text-muted);
   font-size: 12px;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1;
 }
 
-.bill-card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 2px 6px;
-  width: 100%;
-  margin-top: auto;
+.bill-card-date {
   color: var(--text-subtle);
   font-size: 12px;
-  font-variant-numeric: tabular-nums;
   line-height: 1.4;
 }
 
-.bill-card-meta time {
-  margin-left: auto;
-  white-space: nowrap;
+.bill-card-amount {
+  margin-top: 10px;
+  color: var(--accent-strong);
+  font-size: clamp(22px, 7.5vw, 32px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.bill-card-date {
+  margin-top: auto;
+  padding-top: 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .bill-card.is-empty {
-  background: color-mix(in srgb, var(--surface) 84%, #d9e0e7);
+  background: var(--surface-soft);
 }
 
 .bill-card.is-empty .bill-card-amount {
-  color: var(--text-muted);
+  color: var(--text-subtle);
 }
 
 .empty-state {
@@ -747,217 +767,275 @@ onUnmounted(() => {
   color: var(--text-strong);
 }
 
-.detail-summary {
+.bill-detail-view {
   display: grid;
-  gap: 14px;
-  align-items: stretch;
+  gap: 16px;
 }
 
-.budget-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  align-items: stretch;
-}
-
-.field-label {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-}
-
-.title-field {
-  grid-template-columns: minmax(0, 1fr) auto;
+.title-field,
+.editable-name,
+.editable-budget,
+.section-row,
+.items-heading {
+  display: flex;
   align-items: center;
 }
 
-.bill-delete-button {
-  width: 34px;
-  height: 34px;
+.title-field {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.editable-name,
+.editable-budget {
+  min-width: 0;
+  gap: 4px;
+  cursor: text;
+}
+
+.editable-name .el-icon,
+.editable-budget .el-icon {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.detail-back-button,
+.bill-delete-button,
+.item-note-button,
+.add-item-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.detail-back-button,
+.bill-delete-button,
+.item-note-button {
+  flex: 0 0 44px;
   padding: 0;
-  font-size: 16px;
+  color: var(--text-subtle);
+  font-size: 17px;
+}
+
+.detail-back-button {
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: var(--text-main);
+}
+
+.bill-delete-button {
+  margin-left: auto;
+}
+
+.detail-back-button:is(:hover, :focus-visible),
+.item-note-button:is(:hover, :focus-visible) {
+  background: var(--header-icon-bg);
+  color: var(--accent-strong);
+}
+
+.bill-delete-button:is(:hover, :focus-visible) {
+  background: var(--danger-bg);
+  color: var(--danger-text);
 }
 
 .text-input {
   width: 100%;
   min-width: 0;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--accent-border) 42%, var(--divider));
-  border-radius: 12px;
-  outline: 0;
-  background: color-mix(in srgb, var(--field-bg) 76%, var(--surface));
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--text-main);
-  font-size: 15px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  font: inherit;
+  font-size: 16px;
+}
+
+.text-input::placeholder {
+  color: var(--text-subtle);
+  font-size: 0.9em;
+  font-weight: 400;
 }
 
 .text-input:focus {
-  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
   background: var(--surface);
-  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.text-input[type="number"] {
+  appearance: textfield;
+}
+
+.text-input::-webkit-inner-spin-button,
+.text-input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 .title-input {
-  grid-column: 1 / -1;
-  height: 54px;
   color: var(--text-strong);
   font-size: 24px;
   font-weight: 700;
-}
-
-.budget-input {
-  height: 54px;
-  color: var(--accent-strong);
-  font-size: 24px;
-  font-weight: 700;
+  field-sizing: content;
 }
 
 .balance-card {
   display: grid;
-  gap: 12px;
-  min-width: 0;
-  min-height: 126px;
-  padding: 14px 16px;
+  gap: 20px;
+  padding: 20px;
   border-radius: 14px;
-  background: var(--stat-materials-bg);
-  box-shadow: var(--stat-light-shadow);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
-.balance-main {
+.balance-main,
+.balance-stat {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  justify-items: end;
-}
-
-.balance-main span,
-.balance-spent span {
-  justify-self: start;
-  color: var(--text-muted);
-  font-weight: 700;
+  min-width: 0;
+  gap: 4px;
+  color: var(--text-subtle);
+  font-size: 13px;
 }
 
 .balance-main strong {
-  align-self: center;
   color: var(--accent-strong);
-  font-size: 32px;
-  line-height: 1.05;
-}
-
-.balance-spent {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--accent-border) 32%, transparent);
-}
-
-.balance-spent span {
-  font-size: 12px;
-}
-
-.balance-spent strong {
-  color: var(--accent-strong);
-  font-size: 18px;
+  font-size: clamp(32px, 9vw, 46px);
+  font-variant-numeric: tabular-nums;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
-.add-item-row {
-  display: inline-flex;
+.balance-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.editable-budget,
+.balance-stat strong {
+  min-height: 44px;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-input {
+  width: auto;
+  max-width: calc(100% - 30px);
+  padding-inline: 1px;
+  color: inherit;
+  field-sizing: content;
+}
+
+.balance-stat strong {
+  display: grid;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--header-icon-bg);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .section-row {
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.items-heading {
+  gap: 8px;
+}
+
+.items-heading h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 18px;
+}
+
+.items-heading span,
+.items-empty {
+  color: var(--text-subtle);
+  font-size: 13px;
 }
 
 .add-item-row {
-  width: 100%;
-  height: 66px;
-  border: 0;
-  border-radius: 14px;
-  color: var(--accent);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--header-icon-bg) 82%, var(--surface)) 0%,
-      color-mix(in srgb, var(--surface-soft) 74%, var(--surface)) 100%
-    );
-  box-shadow:
-    0 10px 20px color-mix(in srgb, var(--accent-ring) 70%, transparent),
-    0 4px 12px rgba(38, 56, 88, 0.05),
-    var(--stat-light-shadow);
+  gap: 4px;
+  padding: 0 8px;
+  color: var(--accent-strong);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.item-list {
-  display: grid;
-  gap: 12px;
+.add-item-row:is(:hover, :focus-visible) {
+  background: var(--header-icon-bg);
 }
 
-.item-swipe {
-  border-radius: 14px;
-}
-
-.item-swipe :deep(.van-swipe-cell__wrapper) {
-  border-radius: 14px;
+.items-empty {
+  margin: 0;
+  padding: 18px 0;
 }
 
 .item-row {
-  display: grid;
-  grid-template-columns: minmax(104px, 142px) minmax(0, 1fr);
-  gap: 12px;
-  align-items: end;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--accent-border) 34%, var(--divider));
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--surface-soft) 0%, color-mix(in srgb, var(--surface-soft) 72%, var(--surface)) 100%);
-  box-shadow: 0 6px 16px rgba(38, 56, 88, 0.04);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-block: 6px;
 }
 
-.item-field {
-  display: grid;
-  gap: 6px;
+.item-swipe {
+  border-top: 1px solid var(--divider);
+}
+
+.item-content {
+  flex: 1;
   min-width: 0;
 }
 
-.item-field span {
-  color: var(--text-muted);
-  font-size: 12px;
+.item-amount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-strong);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.price-input {
+  padding-inline: 2px;
+  color: inherit;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
-.item-price-field .text-input {
-  color: var(--accent-strong);
-  font-weight: 700;
-  text-align: right;
+.item-note {
+  margin: -3px 0 6px;
+  color: var(--text-subtle);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.item-note-input {
+  color: var(--text-subtle);
 }
 
 .swipe-delete-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
   gap: 4px;
-  width: 72px;
+  width: 64px;
   height: 100%;
-  min-height: 84px;
   margin-left: 8px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--danger-bg);
   color: var(--danger-text);
   font-size: 12px;
@@ -1039,7 +1117,7 @@ onUnmounted(() => {
 
   .page-header {
     margin: -10px -10px 10px;
-    padding: 12px 16px;
+    padding: 12px 10px 4px;
   }
 
   .page-header h1 {
@@ -1056,35 +1134,13 @@ onUnmounted(() => {
   }
 
   .bill-card {
-    padding-inline: 10px;
+    padding-inline: 12px;
   }
 
   .bill-editor,
   .items-panel {
     padding: 14px;
     border-radius: 12px;
-  }
-
-  .budget-row {
-    grid-template-columns: 1fr;
-  }
-
-  .item-row {
-    grid-template-columns: minmax(82px, 96px) minmax(0, 1fr);
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .item-field span {
-    font-size: 11px;
-  }
-
-  .item-row .text-input {
-    padding: 0 10px;
-  }
-  .swipe-delete-action {
-    width: 64px;
-    min-height: 78px;
   }
 
   .recycle-item {
