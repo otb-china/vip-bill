@@ -66,10 +66,13 @@
     <main v-else class="bill-detail-view">
       <section class="bill-editor">
         <div class="detail-summary">
-          <label class="field-label title-field">
-            <span>VIP NAME</span>
-            <input v-model.trim="activeBill.name" class="text-input title-input" placeholder="账单名" @input="touchActiveBill" />
-          </label>
+          <div class="field-label title-field">
+            <label for="bill-name">VIP NAME</label>
+            <button class="icon-button danger bill-delete-button" type="button" aria-label="删除账单" title="删除账单" @click="removeActiveBill">
+              <el-icon aria-hidden="true"><Delete /></el-icon>
+            </button>
+            <input id="bill-name" v-model.trim="activeBill.name" class="text-input title-input" placeholder="账单名" @input="touchActiveBill" />
+          </div>
 
           <div class="budget-row">
             <label class="field-label budget-field">
@@ -97,17 +100,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="detail-actions">
-          <button class="text-action" type="button" @click="shareBillImage">
-            <el-icon><Share /></el-icon>
-            <span>生成明细图片</span>
-          </button>
-          <button class="text-action danger" type="button" @click="removeActiveBill">
-            <el-icon><Delete /></el-icon>
-            <span>删除账单</span>
-          </button>
         </div>
       </section>
 
@@ -211,7 +203,7 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { showConfirmDialog, showToast } from "vant";
-import { Back, Delete, Plus, Search, Setting, Share, Top } from "@element-plus/icons-vue";
+import { Back, Delete, Plus, Search, Setting, Top } from "@element-plus/icons-vue";
 import ImportDataPopup from "@/components/ImportDataPopup.vue";
 import SettingsPopup from "@/components/SettingsPopup.vue";
 import { DEFAULT_THEME, isThemeKey, themeOptions } from "@/config/themes";
@@ -478,92 +470,6 @@ function removeActiveBill() {
   });
 }
 
-async function shareBillImage() {
-  if (!activeBill.value) return;
-  const dataUrl = createBillImage(activeBill.value);
-  const link = document.createElement("a");
-  link.href = dataUrl;
-  link.download = `${activeBill.value.name || "vip-bill"}-明细.png`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  showToast("明细图片已生成");
-}
-
-function createBillImage(bill: Bill) {
-  const validItems = getValidItems(bill.items);
-  const width = 900;
-  const rowHeight = 64;
-  const listStartY = 326;
-  const rowBottomOffset = 10;
-  const footerGap = 50;
-  const footerBottomSpace = 84;
-  const listHeight = validItems.length ? (validItems.length - 1) * rowHeight + rowBottomOffset : 0;
-  const footerY = listStartY + listHeight + footerGap;
-  const height = Math.max(560, footerY + footerBottomSpace);
-  const canvas = document.createElement("canvas");
-  const pixelRatio = window.devicePixelRatio || 1;
-  canvas.width = width * pixelRatio;
-  canvas.height = height * pixelRatio;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-  ctx.scale(pixelRatio, pixelRatio);
-  ctx.fillStyle = "#f6f8fb";
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "#ffffff";
-  roundRect(ctx, 48, 48, width - 96, height - 96, 24);
-  ctx.fill();
-
-  ctx.fillStyle = "#203747";
-  ctx.font = "700 42px Arial, sans-serif";
-  ctx.fillText(bill.name || "未命名账单", 88, 124);
-  ctx.fillStyle = "#72808c";
-  ctx.font = "24px Arial, sans-serif";
-  ctx.fillText(`${validItems.length} 项`, 88, 164);
-  ctx.fillText(`总充值 ¥${formatMoney(Number(bill.totalAmount || 0))}`, 88, 206);
-  ctx.fillText(`剩余额 ¥${formatMoney(Number(bill.totalAmount || 0) - billTotal(bill))}`, 88, 246);
-
-  ctx.fillStyle = "#1f6b7b";
-  ctx.font = "700 44px Arial, sans-serif";
-  ctx.textAlign = "right";
-  ctx.fillText(`¥${formatMoney(billTotal(bill))}`, width - 88, 140);
-  ctx.textAlign = "left";
-
-  let y = listStartY;
-  validItems.forEach((item, index) => {
-    ctx.fillStyle = index % 2 === 0 ? "#f7f9fc" : "#ffffff";
-    roundRect(ctx, 88, y - 42, width - 176, 52, 10);
-    ctx.fill();
-    ctx.fillStyle = "#203747";
-    ctx.font = "24px Arial, sans-serif";
-    ctx.fillText(item.name || "无备注", 112, y - 8);
-    ctx.fillStyle = "#1f6b7b";
-    ctx.font = "700 24px Arial, sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(`¥${formatMoney(Number(item.price || 0))}`, width - 112, y - 8);
-    ctx.textAlign = "left";
-    y += rowHeight;
-  });
-
-  ctx.fillStyle = "#72808c";
-  ctx.font = "18px Arial, sans-serif";
-  ctx.fillText("Vip Bill", 88, footerY);
-  return canvas.toDataURL("image/png");
-}
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + width, y, x + width, y + height, radius);
-  ctx.arcTo(x + width, y + height, x, y + height, radius);
-  ctx.arcTo(x, y + height, x, y, radius);
-  ctx.arcTo(x, y, x + width, y, radius);
-  ctx.closePath();
-}
-
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -643,7 +549,6 @@ onUnmounted(() => {
 }
 
 .header-actions,
-.detail-actions,
 .section-row,
 .item-row {
   display: flex;
@@ -723,8 +628,7 @@ onUnmounted(() => {
   font-size: 16px;
 }
 
-.icon-button.danger,
-.text-action.danger {
+.icon-button.danger {
   background: var(--danger-bg);
   color: var(--danger-text);
 }
@@ -744,7 +648,8 @@ onUnmounted(() => {
 
 .header-bill-count,
 .empty-state span,
-.field-label span {
+.field-label span,
+.title-field label {
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -842,11 +747,6 @@ onUnmounted(() => {
   color: var(--text-strong);
 }
 
-.bill-editor {
-  display: grid;
-  gap: 18px;
-}
-
 .detail-summary {
   display: grid;
   gap: 14px;
@@ -864,6 +764,18 @@ onUnmounted(() => {
   display: grid;
   gap: 7px;
   min-width: 0;
+}
+
+.title-field {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.bill-delete-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 16px;
 }
 
 .text-input {
@@ -887,6 +799,7 @@ onUnmounted(() => {
 }
 
 .title-input {
+  grid-column: 1 / -1;
   height: 54px;
   color: var(--text-strong);
   font-size: 24px;
@@ -951,12 +864,6 @@ onUnmounted(() => {
   line-height: 1.1;
 }
 
-.detail-actions {
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.text-action,
 .add-item-row {
   display: inline-flex;
   align-items: center;
