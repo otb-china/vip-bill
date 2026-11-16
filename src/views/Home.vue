@@ -248,7 +248,6 @@ import {
   createEmptyBillItem,
   createId,
   formatMoney,
-  getBillUpdatedTime,
   normalizeDeletedBills,
   normalizeBills,
   sumBillItems,
@@ -290,18 +289,7 @@ watch(themeStyle, (variables) => {
 }, { immediate: true });
 const activeBill = computed(() => bills.value.find((bill) => bill.id === activeBillId.value));
 const sortedBills = computed(() => {
-  return [...bills.value].sort((firstBill, secondBill) => {
-    const emptySort = Number(isBillRemainingEmpty(firstBill)) - Number(isBillRemainingEmpty(secondBill));
-    if (emptySort) return emptySort;
-    return getBillUpdatedTime(secondBill) - getBillUpdatedTime(firstBill);
-  });
-});
-const visibleBills = computed(() => {
-  const keyword = billSearch.value.trim().toLowerCase();
-  const matchingBills = keyword
-    ? sortedBills.value.filter((bill) => bill.name.toLowerCase().includes(keyword))
-    : sortedBills.value;
-  return matchingBills.map((bill) => {
+  const datedBills = bills.value.map((bill) => {
     let latestConsumptionAt: string | undefined;
     let latestTime = -Infinity;
     for (const item of getValidItems(bill.items)) {
@@ -312,8 +300,18 @@ const visibleBills = computed(() => {
         latestConsumptionAt = item.createdAt;
       }
     }
-    return { ...bill, latestConsumptionAt };
+    return { ...bill, latestConsumptionAt, latestTime };
   });
+  return datedBills.sort((firstBill, secondBill) => {
+    if (firstBill.latestTime === secondBill.latestTime) return 0;
+    return secondBill.latestTime - firstBill.latestTime;
+  });
+});
+const visibleBills = computed(() => {
+  const keyword = billSearch.value.trim().toLowerCase();
+  return keyword
+    ? sortedBills.value.filter((bill) => bill.name.toLowerCase().includes(keyword))
+    : sortedBills.value;
 });
 const activeBillTotal = computed(() => activeBill.value ? billTotal(activeBill.value) : 0);
 const activeBillRemaining = computed(() => activeBill.value ? Number(activeBill.value.totalAmount || 0) - activeBillTotal.value : 0);
