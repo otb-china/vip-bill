@@ -1,7 +1,8 @@
 import { ref, type Ref } from "vue";
 import dayjs from "dayjs";
 import { showConfirmDialog, showToast } from "vant";
-import { LStorage } from "@/utils/localStorage.ts";
+import { storageKeys } from "@/utils/toolStorage";
+import { LStorage, reportSaveError } from "@/utils/localStorage.ts";
 import {
   createId,
   getBillUpdatedTime,
@@ -68,18 +69,22 @@ export function useBackupActions(options: UseBackupActionsOptions) {
       title: "提示",
       message: "确认清除所有账单数据吗？",
       width: "250px",
-    }).then(() => {
+    }).then(async () => {
+      try {
+        await Promise.all([LStorage.new(storageKeys.bills).remove(), LStorage.new(storageKeys.recycleBin).remove()]);
+      } catch (error) {
+        reportSaveError(error);
+        return;
+      }
       options.bills.value = [];
       options.deletedBills.value = [];
-      LStorage.new("vipBillData").remove();
-      LStorage.new("vipBillRecycleBin").remove();
       options.settingsPopup.value = false;
       showToast("数据已重置");
     }).catch(() => {
     });
   }
 
-  function importData() {
+  async function importData() {
     try {
       const parsedData = JSON.parse(importInfo.value.dataStr) as VipBillBackupData;
       if (!parsedData || typeof parsedData !== "object" || Array.isArray(parsedData)) {
@@ -112,17 +117,19 @@ export function useBackupActions(options: UseBackupActionsOptions) {
         return id === bill.id ? bill : { ...bill, id };
       });
 
-      LStorage.new("vipBillData").setter(uniqueBills);
-      if (mergedDeletedBills.length) {
-        LStorage.new("vipBillRecycleBin").setter(mergedDeletedBills);
-      }
+      await Promise.all([
+        LStorage.new(storageKeys.bills).setter(uniqueBills),
+        LStorage.new(storageKeys.recycleBin).setter(mergedDeletedBills),
+      ]);
       options.initData();
       importExportInfo.value.show = false;
       importInfo.value.dataStr = "";
       importInfo.value.fileName = "";
       showToast("总数据导入成功");
-    } catch {
-      showToast("导入失败，请检查备份文件");
+    } catch (error) {
+      showToast(error instanceof DOMException && error.name === "QuotaExceededError"
+        ? "存储空间不足，导入的数据未保存，请保留备份文件"
+        : "导入失败，请检查备份文件");
     }
   }
 

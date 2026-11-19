@@ -242,7 +242,8 @@ import ImportDataPopup from "@/components/ImportDataPopup.vue";
 import SettingsPopup from "@/components/SettingsPopup.vue";
 import { DEFAULT_THEME, isThemeKey, themeOptions } from "@/config/themes";
 import { useBackupActions } from "@/composables/useBackupActions";
-import { LStorage } from "@/utils/localStorage.ts";
+import { storageKeys } from "@/utils/toolStorage";
+import { LStorage, reportSaveError } from "@/utils/localStorage.ts";
 import {
   createEmptyBill,
   createEmptyBillItem,
@@ -276,9 +277,9 @@ const vFocusNote = {
 };
 let billListScrollY = 0;
 
-const billStorage = LStorage.new("vipBillData");
-const recycleStorage = LStorage.new("vipBillRecycleBin");
-const themeStorage = LStorage.new("vipBillTheme");
+const billStorage = LStorage.new(storageKeys.bills);
+const recycleStorage = LStorage.new(storageKeys.recycleBin);
+const themeStorage = LStorage.new(storageKeys.theme);
 
 const currentThemeOption = computed(() => {
   return themeOptions.find((theme) => theme.key === currentTheme.value) || themeOptions[0];
@@ -378,23 +379,23 @@ function formatConsumptionDate(value: string, dateOnly = false) {
 
 function saveBills() {
   if (bills.value.length) {
-    billStorage.setter(bills.value);
+    void billStorage.setter(bills.value).catch(reportSaveError);
   } else {
-    billStorage.remove();
+    void billStorage.remove().catch(reportSaveError);
   }
 }
 
 function saveDeletedBills() {
   if (deletedBills.value.length) {
-    recycleStorage.setter(deletedBills.value);
+    void recycleStorage.setter(deletedBills.value).catch(reportSaveError);
   } else {
-    recycleStorage.remove();
+    void recycleStorage.remove().catch(reportSaveError);
   }
 }
 
 function setTheme(theme: ThemeKey) {
   currentTheme.value = theme;
-  themeStorage.setter(theme);
+  void themeStorage.setter(theme).catch(reportSaveError);
 }
 
 function init() {
